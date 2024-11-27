@@ -16,15 +16,11 @@ include_directories(${SDL2_INCLUDE_DIRS} ${SDL2_TTF_INCLUDE_DIRS} ${SDL2_IMAGE_I
 # Link directories (This line added - Make sure to link directories)
 link_directories(${SDL2_LIBRARY_DIRS} ${SDL2_TTF_LIBRARY_DIRS} ${SDL2_IMAGE_LIBRARY_DIRS})
 
-# Create executable
 add_executable(sdltest main.c client_sdl.c)
+add_executable(manager manager.c)
+add_executable(client client.c client_sdl.c)
 
 # Link SDL2, SDL2_ttf, and SDL2_image libraries
 target_link_libraries(sdltest ${SDL2_LIBRARIES} ${SDL2_TTF_LIBRARIES} ${SDL2_IMAGE_LIBRARIES})
-
-## 'manager' 실행 파일을 manager.c에서 생성
-#add_executable(manager manager.c)
-#
-## 'client' 실행 파일을 client.c에서 생성
-#add_executable(client client.c client_sdl.c)
-#target_link_libraries(client )
+target_link_libraries(manager ${SDL2_LIBRARIES} ${SDL2_TTF_LIBRARIES} ${SDL2_IMAGE_LIBRARIES})
+target_link_libraries(client ${SDL2_LIBRARIES} ${SDL2_TTF_LIBRARIES} ${SDL2_IMAGE_LIBRARIES})

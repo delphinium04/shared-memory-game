@@ -2,16 +2,22 @@
 
 // sudo apt-get install libsdl2-dev libsdl2-image-dev libsdl2-ttf-dev
 
-// extern int sdl_pipe[2];
-// extern int status_pipe[2];
-// extern GameData *dataptr;
-
 SDL_Window* win = NULL;
 SDL_Renderer* ren = NULL;
 TTF_Font* font = NULL;
 
 void run_sdl_client_loop()
 {
+    // 이제 할 것
+    // 실시간으로 업데이트하지 않음.
+    // 본인 턴이 왔을 때 게임 데이터 받아와서 직접 판단.
+
+    // 로케일 설정, UTF-8 인코딩 사용
+    setlocale(LC_ALL, ""); // 시스템 로케일 설정
+
+    close(SDL_pipe[1]); // 읽기만
+    close(SDL_status_pipe[0]); // 쓰기만
+
     printf("SDL 프로세스 시작\n");
 
     int width = 1280, height = 720;
@@ -24,7 +30,12 @@ void run_sdl_client_loop()
     SDL_RenderClear(ren);
 
     SDL_Color white = {255, 255, 255, 255};
-    SDL_Texture *testImage = load_texture("test.png", ren);
+    SDL_Texture* testImage = load_texture("test.png", ren);
+
+    SDL_RenderClear(ren);
+    render_texture(testImage, 640, 360, ren);
+    render_text("Hello World!", 640, 360, white);
+    SDL_RenderPresent(ren); // 렌더링한 내용을 화면에 표시
 
     printf("SDL 준비 완료\n");
     SDL_Event e;
@@ -38,15 +49,30 @@ void run_sdl_client_loop()
             if (e.type == SDL_QUIT)
                 quit = true;
         }
-        SDL_RenderClear(ren);
-        SDL_Color white = {255, 255, 255, 255};
-        render_texture(testImage, 1280 - x, 720 - y, ren);
-        render_text("Hello World!", x++, y++, white);
 
-        SDL_RenderPresent(ren); // 렌더링한 내용을 화면에 표시
+        char buffer[256];
+        ssize_t count = read(SDL_pipe[0], buffer, sizeof(buffer) - 1);
+        if (count == -1)
+        {
+            perror("파이프 읽기 오류");
+            cleanup();  // 리소스 정리 후 종료
+            exit(EXIT_FAILURE);
+        }
+
+        if (count > 0)
+        {
+            buffer[count] = '\0';  // 문자열 종료
+            SDL_RenderClear(ren);  // 이전 렌더링 내용 지우기
+            render_texture(testImage, 640, 360, ren);
+            render_text(buffer, 640, 360, white);
+            SDL_RenderPresent(ren);  // 새 내용 화면에 표시
+        }
+        // sleep(1);  // 너무 빠른 루프를 방지
     }
+    close(SDL_pipe[0]);
+    close(SDL_status_pipe[1]);
+    cleanup();
 }
-
 
 bool init_sdl(const char* title, int width, int height)
 {
@@ -105,8 +131,18 @@ bool init_sdl(const char* title, int width, int height)
 
 void render_text(const char* message, int x, int y, SDL_Color color)
 {
-    SDL_Surface* surface = TTF_RenderText_Solid(font, message, color);
+    // SDL_ttf에서 UTF-8 문자열 렌더링
+    SDL_Surface* surface = TTF_RenderUTF8_Solid(font, message, color);
+    if (!surface) {
+        fprintf(stderr, "TTF_RenderUTF8_Solid 오류: %s\n", TTF_GetError());
+        return;
+    }
     SDL_Texture* texture = SDL_CreateTextureFromSurface(ren, surface);
+    if (!texture) {
+        fprintf(stderr, "SDL_CreateTextureFromSurface 오류: %s\n", SDL_GetError());
+        SDL_FreeSurface(surface);
+        return;
+    }
     SDL_Rect dest = {x, y, surface->w, surface->h};
 
     SDL_FreeSurface(surface);
@@ -145,10 +181,11 @@ void cleanup()
     SDL_Quit();
 }
 
+
 // void wait_response() {
 //     while (1) {
 //         char buffer[MSG_SIZE];
-//         if (read(status_pipe[0], buffer, MSG_SIZE - 1) == -1) {
+//         if (read(SDL_status_pipe[0], buffer, MSG_SIZE - 1) == -1) {
 //             perror("[Parent] read");
 //             exit(1);
 //         }
@@ -161,7 +198,7 @@ void cleanup()
 // }
 
 // void send_response() {
-//     if (write(status_pipe[1], "CMD_SDL_DONE", strlen("CMD_SDL_DONE") + 1) == -1) {
+//     if (write(SDL_status_pipe[1], "CMD_SDL_DONE", strlen("CMD_SDL_DONE") + 1) == -1) {
 //         perror("[SDL] write");
 //         exit(1);
 //     }

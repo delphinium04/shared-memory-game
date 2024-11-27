@@ -9,6 +9,7 @@
 #include <SDL2/SDL.h>
 #include <SDL2/SDL_ttf.h>
 #include <SDL2/SDL_image.h>
+#include <locale.h>
 
 void render_text(const char *message, int x, int y, SDL_Color color);
 SDL_Texture* load_texture(const char *file, SDL_Renderer *ren);

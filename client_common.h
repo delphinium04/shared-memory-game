@@ -7,7 +7,6 @@
 #define CLIENT_COMMON_H
 
 #define MAP_SIZE 100
-#define MAX_HASH 1000
 #define MSG_SIZE 256
 #define NOT_EXIST_WAY -1
 
@@ -30,6 +29,7 @@
 #include <wait.h>
 #include <pthread.h>
 
+
 typedef struct
 {
     int pid[2];
@@ -49,5 +49,9 @@ typedef struct
     pthread_mutex_t lock; // 뮤텍스
     pthread_cond_t cond; // 조건 변수
 } GameData;
+
+extern int SDL_pipe[2];
+extern int SDL_status_pipe[2];
+extern GameData *dataptr;
 
 #endif //CLIENT_COMMON_H
