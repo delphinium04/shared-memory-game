@@ -6,7 +6,7 @@
 #define CLIENT_SDL_H
 
 #include "client_common.h"
-
+#include <SDL2/SDL.h>
 
 void run_sdl_client_loop();
 

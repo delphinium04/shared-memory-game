@@ -1,7 +1,3 @@
-#include <stdio.h>
-#include <unistd.h>
-#include <string.h>
-#include <SDL2/SDL.h>
 #include "client_sdl.h"
 
 extern int sdl_pipe[2];
