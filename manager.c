@@ -43,7 +43,6 @@ void initialize_data(void) {
     dataptr->game_running = false;
 
     for (int i = 0; i < MAP_SIZE; i++) {
-        dataptr->map_ladder[i] = NOT_EXIST_WAY;
         dataptr->map_snake[i] = NOT_EXIST_WAY;
     }
 
@@ -121,42 +120,31 @@ int main(void) {
 }
 
 int get_random_int(int max) {
+    srand(getpid() + time(NULL));
     return rand() % max + 1;
 }
 
 void set_snake_ladder() {
     srand(time(NULL));
+    Vector2 snake[] ={
+        {3,8},
+        {6, 15},
+        {11,13},
+        {18, 7},
+        {22, 20},
+        {24, 9}
+    };
 
-    for (int i = 0; i < 3; i++) {
-        int start = -1, end = -1;
-        do {
-            start = get_random_int(40) + 10; // 10 <= start <= 50
-        } while (dataptr->map_snake[start] != NOT_EXIST_WAY || dataptr->map_ladder[start] != NOT_EXIST_WAY);
-        do {
-            end = get_random_int(60) + 30; // 30 (or start) < end <= 90
-        } while (start > end);
-        printf("사다리 세팅: %d -> %d\n", start, end);
-        dataptr->map_ladder[start] = end;
-    }
-
-    for (int i = 0; i < 3; i++) {
-        int start = -1, end = -1;
-        do {
-            start = get_random_int(60) + 30; // 30 <= end <= 90
-        } while (dataptr->map_snake[start] != NOT_EXIST_WAY || dataptr->map_ladder[start] != NOT_EXIST_WAY);
-
-        do {
-            end = get_random_int(50) + 10; // 10 <= start < 60 (or end)
-        } while (end > start);
-        printf("뱀 세팅: %d -> %d\n", start, end);
-        dataptr->map_snake[start] = end;
+    for (int i=0; i<sizeof(snake) / sizeof(Vector2); i++)
+    {
+        dataptr->map_snake[snake[i].x] = snake[i].y;
     }
 }
 
 void set_turn() {
     // 게임 끝 확인
     for (int i = 0; i < 2; i++) {
-        if (dataptr->player_position[i] >= 100) {
+        if (dataptr->player_position[i] >= MAP_SIZE-1) {
             dataptr->winner = dataptr->pid[i];
             for (int idx = 0; idx < dataptr->pid_count; idx++) {
                 kill(dataptr->pid[idx], SIGGAMEOVER);

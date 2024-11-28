@@ -16,7 +16,7 @@ include_directories(${SDL2_INCLUDE_DIRS} ${SDL2_TTF_INCLUDE_DIRS} ${SDL2_IMAGE_I
 # Link directories (This line added - Make sure to link directories)
 link_directories(${SDL2_LIBRARY_DIRS} ${SDL2_TTF_LIBRARY_DIRS} ${SDL2_IMAGE_LIBRARY_DIRS})
 
-add_executable(sdltest main.c client_sdl.c)
+add_executable(sdltest sdltest.c client_sdl.c)
 add_executable(manager manager.c)
 add_executable(client client.c client_sdl.c)
 

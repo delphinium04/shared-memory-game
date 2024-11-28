@@ -6,7 +6,7 @@
 #ifndef CLIENT_COMMON_H
 #define CLIENT_COMMON_H
 
-#define MAP_SIZE 100
+#define MAP_SIZE 27
 #define MSG_SIZE 256
 #define NOT_EXIST_WAY -1
 
@@ -40,8 +40,7 @@ typedef struct
     char fifo_p1_path[MSG_SIZE];
 
     bool game_running;
-    int map_ladder[MAP_SIZE + 1];
-    int map_snake[MAP_SIZE + 1];
+    int map_snake[MAP_SIZE];
     int player_position[2];
     int current_turn;
     int winner;
@@ -50,9 +49,15 @@ typedef struct
     pthread_cond_t cond; // 조건 변수
 } GameData;
 
+typedef struct
+{
+    int x;
+    int y;
+} Vector2;
 
 extern int pipe_client_to_sdl[2];
 extern int pipe_sdl_to_client[2];
+extern int player_index; // 0 or 1
 extern GameData *dataptr;
 
 #endif //CLIENT_COMMON_H

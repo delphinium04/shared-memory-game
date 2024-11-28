@@ -12,11 +12,18 @@
 #include <locale.h>
 
 void render_text(const char *message, int x, int y, SDL_Color color);
-SDL_Texture* load_texture(const char *file, SDL_Renderer *ren);
-void render_texture(SDL_Texture *tex, int x, int y, SDL_Renderer *ren);
+SDL_Texture* load_texture(const char *file);
+void render_texture(SDL_Texture *tex, int x, int y);
+void render_player(int idx);
 
+void assign_stage_position();
 void run_sdl();
 bool init_sdl();
 void cleanup();
+
+void write_to_client(char* message);
+int read_from_client(char* buffer);
+
+void update();
 
 #endif //CLIENT_SDL_H
