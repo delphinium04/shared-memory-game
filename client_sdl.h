@@ -15,7 +15,7 @@ void render_text(const char *message, int x, int y, SDL_Color color);
 SDL_Texture* load_texture(const char *file, SDL_Renderer *ren);
 void render_texture(SDL_Texture *tex, int x, int y, SDL_Renderer *ren);
 
-void run_sdl_client_loop();
+void run_sdl();
 bool init_sdl();
 void cleanup();
 

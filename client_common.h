@@ -50,8 +50,9 @@ typedef struct
     pthread_cond_t cond; // 조건 변수
 } GameData;
 
-extern int SDL_pipe[2];
-extern int SDL_status_pipe[2];
+
+extern int pipe_client_to_sdl[2];
+extern int pipe_sdl_to_client[2];
 extern GameData *dataptr;
 
 #endif //CLIENT_COMMON_H
