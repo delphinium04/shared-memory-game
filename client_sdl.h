@@ -25,5 +25,7 @@ void write_to_client(char* message);
 int read_from_client(char* buffer);
 
 void update();
+void rander_mini_game();
+void macro_show_game(SDL_Texture* texture);
 
 #endif //CLIENT_SDL_H
