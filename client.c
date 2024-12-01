@@ -156,25 +156,19 @@ void client_game()
             int current_position = dataptr->player_position[player_index] += dice;
             if (current_position > 27) current_position = 26;
 
-            if (current_position < MAP_SIZE - 1)
+  
+            if (dataptr->map_snake[current_position] != NOT_EXIST_WAY)
             {
-                if (dataptr->map_snake[current_position] != NOT_EXIST_WAY)
-                {
-                    snprintf(buffer, MSG_SIZE, "사다리를 탔습니다! %d->%d", current_position,
-                        dataptr->map_snake[current_position]);
-                    current_position = dataptr->map_snake[current_position];
-                    dataptr->player_position[player_index] = current_position;
-                }
-                write_to_sdl(buffer);
+               sleep(2);
+               snprintf(buffer, MSG_SIZE, "문어 다리를 탔습니다! %d->%d", current_position,
+               dataptr->map_snake[current_position]);
+               current_position = dataptr->map_snake[current_position];
+               dataptr->player_position[player_index] = current_position;
+               write_to_sdl(buffer);  
             }
 
-            sleep(2);
-            snprintf(buffer, MSG_SIZE, "주사위 결과: %d | 현재 위치: %d", dice, current_position);
-            write_to_sdl(buffer);
-
-            sleep(2);
-            //미니 게임
             if (dataptr->map_minigame[current_position] != NOT_MINI_GAME_ZONE) {
+                sleep(2);
                 dataptr->minigame_time = true; //미니게임 시작
                 pass = start_mini_game(); //미니 게임 결과
                 dataptr->minigame_time = false; //미니 게임 종료
@@ -193,6 +187,11 @@ void client_game()
                     write_to_sdl(buffer);
                 }
             }
+
+            sleep(2);
+            snprintf(buffer, MSG_SIZE, "주사위 결과: %d | 현재 위치: %d", dice, current_position);
+            write_to_sdl(buffer);
+        
             kill(dataptr->server_pid, SIGTURNEND);
         }
 
@@ -222,17 +221,6 @@ void run_client()
     signal(SIGTURNSTART, turn_start);
     signal(SIGGAMEOVER, game_end);
 
-    // find fifo pipe
-    if (player_index == 0)
-        fd = open(dataptr->fifo_p0_path, O_RDONLY);
-    else
-        fd = open(dataptr->fifo_p1_path, O_RDONLY);
-    if (fd == -1)
-    {
-        perror("open fifo failed");
-        return;
-    }
-
     printf("[Server:%d] 게임 준비 중\n", dataptr->server_pid);
 
     // 추후 시간 있으면 밑에 while(usleep~ -> 쓰레드로 변경
@@ -248,7 +236,7 @@ void run_client()
     //     return;
     // }
 
-    if (dataptr->game_running == false)
+    if (dataptr->game_running == false) //?
     {
         while (dataptr->game_running == false)
         {
@@ -321,24 +309,11 @@ void turn_start(int sig)
 {
     is_turn = true; // 현재 턴 플래그 설정
 }
-
 // SIGGAMEEND Handler
-void game_end(int sig)
-{
-    if (dataptr->winner == getpid())
-        write_to_sdl("게임이 끝났습니다! 축하드립니다, 승리하셨습니다!");
-    else
-    {
-        char buf[MSG_SIZE];
-        snprintf(buf, MSG_SIZE, "게임이 끝났습니다. 승리자는 [%d]입니다!", dataptr->winner);
-        write_to_sdl(buf);
-    }
-    // fifo pipe 닫기
-    close(fd);
-}
+void game_end(int sig) {}
 
 _Bool start_mini_game() {
-    _Bool player_won = false;
+    _Bool player_won;
     switch(rand() % 3){
         case 2:
             player_won = random_quiz();
@@ -456,6 +431,7 @@ _Bool typing(){
     }
     sleep(4);
     printf("타이핑을 시작하세요!\n");
+    while (getchar() != '\n');
     // 10초 제한 타이머 설정
     time_t start = time(NULL);
     fgets(ans, sizeof(ans), stdin); // 안전한 입력을 위해 fgets 사용

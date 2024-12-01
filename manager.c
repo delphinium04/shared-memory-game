@@ -11,13 +11,6 @@ void set_game_running(GameData *dataptr, bool is_running);
 void terminate(int shmid, char *message) {
     printf("terminate: %s\n", message);
 
-    if (strcmp(dataptr->fifo_p0_path, '\0') == 0) {
-        unlink(dataptr->fifo_p0_path);
-    }
-    if (strcmp(dataptr->fifo_p1_path, '\0') == 0) {
-        unlink(dataptr->fifo_p1_path);
-    }
-
     if (shmdt(dataptr) == -1) {
         perror("shmdt failed");
         exit(EXIT_FAILURE);
@@ -36,9 +29,6 @@ void initialize_data(void) {
     dataptr->pid[1] = -1;
     dataptr->pid_count = 0;
     dataptr->server_pid = getpid();
-
-    dataptr->fifo_p0_path[0] = '\0';
-    dataptr->fifo_p1_path[0] = '\0';
 
     dataptr->game_running = false;
 
@@ -91,22 +81,6 @@ int main(void) {
     }
 
     initialize_data();
-
-    // 명명 파이프 초기 세팅 [/tmp/방번호_fifo_p{1,2}]
-    char *fifo_pipe_name;
-    sprintf(fifo_pipe_name, "/tmp/%d_fifo_p1", room_number);
-    strcpy(dataptr->fifo_p0_path, fifo_pipe_name);
-    if (mkfifo(fifo_pipe_name, 0666) == -1) {
-        perror("mkfifo failed");
-        terminate(shmid, "mkfifo_p1 failed");
-    }
-
-    sprintf(fifo_pipe_name, "/tmp/%d_fifo_p2", room_number);
-    strcpy(dataptr->fifo_p1_path, fifo_pipe_name);
-    if (mkfifo(fifo_pipe_name, 0666) == -1) {
-        perror("mkfifo failed");
-        terminate(shmid, "mkfifo_p2 failed");
-    }
 
     bool is_game_valid = wait_players(30);
     if (is_game_valid == false) {
@@ -183,11 +157,6 @@ void turn_end(int sig) {
 // SIGGAMEOVER Handler
 void game_end(int sig) {
     set_game_running(dataptr, false);
-    printf("게임 종료, [%d] 승리\n", dataptr->winner);
-
-    // fifo pipe 닫기
-    close(fd1);
-    close(fd2);
 }
 
 // AI 사용, mutex와 cond에 대한 지식 필요
@@ -201,18 +170,6 @@ void set_game_running(GameData *dataptr, bool is_running) {
 void run_manager() {
     signal(SIGTURNEND, turn_end);
     signal(SIGGAMEOVER, game_end);
-
-    fd1 = open(dataptr->fifo_p0_path, O_WRONLY);
-    if (fd1 == -1) {
-        perror("open fifo failed");
-        return;
-    }
-
-    fd2 = open(dataptr->fifo_p1_path, O_WRONLY);
-    if (fd2 == -1) {
-        perror("open fifo failed");
-        return;
-    }
 
     printf("게임 준비 중: [Server] %d / [Client] %d %d\n", dataptr->server_pid, dataptr->pid[0], dataptr->pid[1]);
     set_snake_ladder();
