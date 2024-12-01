@@ -446,7 +446,7 @@ void rander_mini_game() {
 void macro_show_game(SDL_Texture* texture) {
     if (texture != NULL) {
         SDL_RenderClear(REN);
-        render_texture(texture, 50, 0);
+        render_texture(texture, 100, 0);
         SDL_RenderPresent(REN);
         usleep(1500000); // 1.5초 대기
     }

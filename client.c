@@ -509,7 +509,7 @@ _Bool updown() {
     }
 
     write_to_sdl("octoupdown_final");
-    sleep(3);
+    sleep(4);
     scanf("%d", &user_input);
     printf("숫자를 입력하세요! : ");
     while (getchar() != '\n');
