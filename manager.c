@@ -46,6 +46,11 @@ void initialize_data(void) {
         dataptr->map_snake[i] = NOT_EXIST_WAY;
     }
 
+    dataptr->minigame_time = false; //미니 게임 장소 세팅
+    for (int i = 0; i < MAP_SIZE; i++) {
+        dataptr->map_minigame[i] = NOT_MINI_GAME_ZONE;
+    }
+    
     dataptr->player_position[0] = 0;
     dataptr->player_position[1] = 0;
     dataptr->winner = -1;
@@ -140,6 +145,13 @@ void set_snake_ladder() {
         dataptr->map_snake[snake[i].x] = snake[i].y;
     }
 }
+void set_mini_game_zone() {
+    dataptr->map_minigame[2] = 1;
+    dataptr->map_minigame[8] = 1;
+    dataptr->map_minigame[14] = 1;
+    dataptr->map_minigame[20] = 1;
+    dataptr->map_minigame[25] = 1;
+}
 
 void set_turn() {
     // 게임 끝 확인
@@ -204,6 +216,7 @@ void run_manager() {
 
     printf("게임 준비 중: [Server] %d / [Client] %d %d\n", dataptr->server_pid, dataptr->pid[0], dataptr->pid[1]);
     set_snake_ladder();
+    set_mini_game_zone();
     sleep(2);
 
     pthread_mutex_lock(&dataptr->lock);

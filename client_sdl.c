@@ -22,6 +22,21 @@ SDL_Texture* TEX_P1_RIGHT = NULL;
 SDL_Texture* TEX_P1_LEFT = NULL;
 SDL_Texture* TEX_P2_RIGHT = NULL;
 SDL_Texture* TEX_P2_LEFT = NULL;
+SDL_Texture* Minigame_begin_texture = NULL;
+SDL_Texture* Quiz_textures[8] = { NULL };
+SDL_Texture* typing_textures[10] = { NULL };
+SDL_Texture* updown_textures[11] = { NULL };
+
+const char* Quiz_imagePaths[8] = { "./src/octoquiz_0.png", "./src/octoquiz_1.png","./src/octoquiz_2.png", "./src/octoquiz_3.png",
+            "./src/octoquiz_4.png", "./src/octoquiz_5.png", "./src/octoquiz_corr.png", "./src/octoquiz_fail.png" };
+
+const char* typing_imagePaths[10] = { "./src/octotype_01.png", "./src/octotype_02.png", "./src/octotype_1.png",
+            "./src/octotype_2.png", "./src/octotype_3.png", "./src/octotype_4.png", "./src/octotype_5.png", "./src/octotype_corr.png",
+            "./src/octotype_fail.png", "./src/octotype_timeout.png" };
+
+const char* updown_imagePaths[11] = { "./src/octoupdown_1.png", "./src/octoupdown_2.png", "./src/octoupdown_3.png",
+            "./src/octoupdown_4.png" , "./src/octoupdown_5.png", "./src/octoupdown_corr1.png", "./src/octoupdown_corr2.png",
+            "./src/octoupdown_down.png", "./src/octoupdown_up.png", "./src/octoupdown_fail.png", "./src/octoupdown_final.png"};
 
 const int TEX_PLAYER_WIDTH = 160, TEX_PLAYER_HEIGHT = 300;
 const int SCREEN_WIDTH = 1280, SCREEN_HEIGHT = 720;
@@ -121,6 +136,35 @@ bool init_sdl(const char* title)
         fprintf(stderr, "./src/p2-right.png 로드 실패: %s\n", IMG_GetError());
         cleanup();
     }
+    //미니게임 로드
+    Minigame_begin_texture = load_texture("./src/begin1.png");
+    if (TEX_P2_RIGHT == NULL)
+    {
+        fprintf(stderr, "./src/begin1.png 로드 실패: %s\n", IMG_GetError());
+        cleanup();
+    }
+
+    for (int i = 0; i < sizeof(Quiz_imagePaths)/sizeof(Quiz_imagePaths[0]); i++) {
+        Quiz_textures[i] = load_texture(Quiz_imagePaths[i]);
+        if (Quiz_textures[i] == NULL) {
+            fprintf(stderr, "Quiz_texture 로드 실패: %s\n", IMG_GetError());
+            cleanup();
+        }
+    }
+    for (int i = 0; i < sizeof(typing_imagePaths)/sizeof(typing_imagePaths[0]); i++) {
+        typing_textures[i] = load_texture(typing_imagePaths[i]);
+        if (typing_textures[i] == NULL) {
+            fprintf(stderr, "typing_textures 로드 실패: %s\n", IMG_GetError());
+            cleanup();
+        }
+    }
+    for (int i = 0; i < sizeof(updown_imagePaths)/sizeof(updown_imagePaths[0]); i++) {
+        updown_textures[i] = load_texture(updown_imagePaths[i]);
+        if (updown_textures[i] == NULL) {
+            fprintf(stderr, "updown_textures 로드 실패: %s\n", IMG_GetError());
+            cleanup();
+        }
+    }
 
     return true;
 }
@@ -204,8 +248,13 @@ void run_sdl()
         }
 
         // 100ms 단위로 Update
-        update();
-        usleep(1000 * 100);
+        if (!dataptr->minigame_time) {
+            update();
+            usleep(1000 * 100);
+        }
+        else{
+            rander_mini_game();
+        }
     }
     cleanup();
 }
@@ -277,7 +326,7 @@ void update()
     SDL_RenderClear(REN); // 이전 렌더링 내용 지우기
     render_texture(TEX_BOARD, 0, 0);
 
-    // 플레이어 인덱스 + 위치 고려한 렌더링
+        // 플레이어 인덱스 + 위치 고려한 렌더링
     if (player_index == 0)
     {
         render_player(1);
@@ -295,6 +344,116 @@ void update()
         strcpy(client_msg, buffer);
     render_text(client_msg, 300, 360, COLOR_WHITE);
     SDL_RenderPresent(REN); // 새 내용 화면에 표시
+
+}
+
+void rander_mini_game() {
+    char* buffer;
+    if (read_from_client(buffer) > 0 && strlen(buffer) > 1) {
+        //quiz
+        if (strcmp(buffer, "quiz1") == 0) {
+            macro_show_game(Quiz_textures[0]);
+            macro_show_game(Minigame_begin_texture);
+            macro_show_game(Quiz_textures[1]);
+        }
+        else if (strcmp(buffer, "quiz2") == 0) {
+            macro_show_game(Quiz_textures[0]);
+            macro_show_game(Minigame_begin_texture);
+            macro_show_game(Quiz_textures[2]);
+        }
+        else if (strcmp(buffer, "quiz3") == 0) {
+            macro_show_game(Quiz_textures[0]);
+            macro_show_game(Minigame_begin_texture);
+            macro_show_game(Quiz_textures[3]);
+        }
+        else if (strcmp(buffer, "quiz4") == 0) {
+            macro_show_game(Quiz_textures[0]);
+            macro_show_game(Minigame_begin_texture);
+            macro_show_game(Quiz_textures[4]);
+        }
+        else if (strcmp(buffer, "quiz5") == 0) {
+            macro_show_game(Quiz_textures[0]);
+            macro_show_game(Minigame_begin_texture);
+            macro_show_game(Quiz_textures[5]);
+        }
+        else if (strcmp(buffer, "quiz_success") == 0) {
+            macro_show_game(Quiz_textures[6]);
+        }
+        else if (strcmp(buffer, "quiz_fail") == 0) {
+            macro_show_game(Quiz_textures[7]);
+        }//typing
+        else if (strcmp(buffer, "typing1") == 0) {
+            macro_show_game(typing_textures[0]);
+            macro_show_game(typing_textures[1]);
+            macro_show_game(typing_textures[2]);
+        }
+        else if (strcmp(buffer, "typing2") == 0) {
+            macro_show_game(typing_textures[0]);
+            macro_show_game(typing_textures[1]);
+            macro_show_game(typing_textures[3]);
+        }
+        else if (strcmp(buffer, "typing3") == 0) {
+            macro_show_game(typing_textures[0]);
+            macro_show_game(typing_textures[1]);
+            macro_show_game(typing_textures[4]);
+        }
+        else if (strcmp(buffer, "typing4") == 0) {
+            macro_show_game(typing_textures[0]);
+            macro_show_game(typing_textures[1]);
+            macro_show_game(typing_textures[5]);
+        }
+        else if (strcmp(buffer, "typing5") == 0) {
+            macro_show_game(typing_textures[0]);
+            macro_show_game(typing_textures[1]);
+            macro_show_game(typing_textures[6]);
+        }
+        else if (strcmp(buffer, "octotyping_corr") == 0) {
+            macro_show_game(typing_textures[7]);
+        }
+        else if (strcmp(buffer, "octotyping_fail") == 0) {
+            macro_show_game(typing_textures[8]);
+        }
+        else if (strcmp(buffer, "octotyping_timeout") == 0) {
+            macro_show_game(typing_textures[9]);
+        }//updown
+        else if (strcmp(buffer, "octoupdown") == 0) {
+            macro_show_game(updown_textures[0]);
+            macro_show_game(updown_textures[1]);
+            macro_show_game(updown_textures[2]);
+            macro_show_game(updown_textures[3]);
+            macro_show_game(updown_textures[4]);
+        }
+        else if (strcmp(buffer, "octoupdown_up") == 0) {
+            macro_show_game(updown_textures[8]);
+        }
+        else if (strcmp(buffer, "octoupdown_down") == 0) {
+            macro_show_game(updown_textures[7]);
+        }
+        else if (strcmp(buffer, "octoupdown_corr1") == 0) {
+            macro_show_game(updown_textures[5]);
+        }
+        else if (strcmp(buffer, "octoupdown_final") == 0) {
+            macro_show_game(updown_textures[10]);
+        }
+        else if (strcmp(buffer, "octoupdown_corr2") == 0) {
+            macro_show_game(updown_textures[6]);
+        }
+        else if (strcmp(buffer, "octoupdown_fail") == 0) {
+            macro_show_game(updown_textures[9]);
+        }
+    }
+}
+void macro_show_game(SDL_Texture* texture) {
+    if (texture != NULL) {
+        SDL_RenderClear(REN);
+        render_texture(texture, 100, 0);
+        SDL_RenderPresent(REN);
+        usleep(1500000); // 1.5초 대기
+    }
+    else {
+        fprintf(stderr, "texture 로드 실패: %s\n", IMG_GetError());
+        cleanup();
+    }
 }
 
 void render_player(int idx)
