@@ -37,9 +37,6 @@ typedef struct
     int pid_count;
     int server_pid;
 
-    char fifo_p0_path[MSG_SIZE];
-    char fifo_p1_path[MSG_SIZE];
-
     bool game_running;
     bool minigame_time; //미니게임에 돌입 했는지
     int map_snake[MAP_SIZE];

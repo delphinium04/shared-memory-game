@@ -26,8 +26,11 @@ SDL_Texture* Minigame_begin_texture = NULL;
 SDL_Texture* Quiz_textures[8] = { NULL };
 SDL_Texture* typing_textures[10] = { NULL };
 SDL_Texture* updown_textures[11] = { NULL };
+SDL_Texture* winlose_textures[4] = { NULL };
 
-const char* Quiz_imagePaths[8] = { "./src/octoquiz_0.png", "./src/octoquiz_1.png","./src/octoquiz_2.png", "./src/octoquiz_3.png",
+const char* winlose_imagePaths[4] = { "./src/1PWIN.png", "./src/1PLOSE.png", "./src/2PWIN.png", "./src/2PLOSE.png" };
+
+const char* Quiz_imagePaths[8] = { "./src/octoquiz_0.png", "./src/octoquiz_1.png", "./src/octoquiz_2.png", "./src/octoquiz_3.png",
             "./src/octoquiz_4.png", "./src/octoquiz_5.png", "./src/octoquiz_corr.png", "./src/octoquiz_fail.png" };
 
 const char* typing_imagePaths[10] = { "./src/octotype_01.png", "./src/octotype_02.png", "./src/octotype_1.png",
@@ -37,6 +40,7 @@ const char* typing_imagePaths[10] = { "./src/octotype_01.png", "./src/octotype_0
 const char* updown_imagePaths[11] = { "./src/octoupdown_1.png", "./src/octoupdown_2.png", "./src/octoupdown_3.png",
             "./src/octoupdown_4.png" , "./src/octoupdown_5.png", "./src/octoupdown_corr1.png", "./src/octoupdown_corr2.png",
             "./src/octoupdown_down.png", "./src/octoupdown_up.png", "./src/octoupdown_fail.png", "./src/octoupdown_final.png"};
+
 
 const int TEX_PLAYER_WIDTH = 160, TEX_PLAYER_HEIGHT = 300;
 const int SCREEN_WIDTH = 1280, SCREEN_HEIGHT = 720;
@@ -165,7 +169,13 @@ bool init_sdl(const char* title)
             cleanup();
         }
     }
-
+    for (int i = 0; i < sizeof(winlose_imagePaths) / sizeof(winlose_imagePaths[0]); i++) {
+        winlose_textures[i] = load_texture(winlose_imagePaths[i]);
+        if (winlose_textures[i] == NULL) {
+            fprintf(stderr, "winlose_textures 로드 실패: %s\n", IMG_GetError());
+            cleanup();
+        }
+    }
     return true;
 }
 
@@ -231,6 +241,7 @@ void run_sdl()
     render_text("게임 준비 중...", 300, 360, COLOR_WHITE);
     SDL_RenderPresent(REN);
 
+    sleep(2);
     SDL_Event e;
     bool quit = false;
     while (!quit)
@@ -247,18 +258,47 @@ void run_sdl()
             }
         }
 
-        // 100ms 단위로 Update
-        if (!dataptr->minigame_time) {
-            update();
-            usleep(1000 * 100);
-        }
-        else{
-            rander_mini_game();
+        if(dataptr->game_running)
+            // 100ms 단위로 Update
+            if (!dataptr->minigame_time) {
+                update();
+                usleep(1000 * 100);
+            }
+            else{
+                rander_mini_game();
+            }
+        else {
+            rander_game_over();
         }
     }
     cleanup();
 }
-
+void rander_game_over() {
+    if (dataptr->pid[0] == getppid()) { //부모프로세스가 플레이어 1이면서
+        if (dataptr->pid[0] == dataptr->winner) { //우승자일때
+            SDL_RenderClear(REN);
+            render_texture(winlose_textures[0], 100, 0);
+            SDL_RenderPresent(REN);
+        }
+        else { //우승자가 아닐때
+            SDL_RenderClear(REN);
+            render_texture(winlose_textures[1], 100, 0);
+            SDL_RenderPresent(REN);
+        }
+    }
+    else { //부모 프로세스가 플레이어2이면서
+        if (dataptr->pid[1] == dataptr->winner) { // 우승자 일때
+            SDL_RenderClear(REN);
+            render_texture(winlose_textures[2], 100, 0);
+            SDL_RenderPresent(REN);
+        }
+        else { //우승자가 아닐때
+            SDL_RenderClear(REN);
+            render_texture(winlose_textures[3], 100, 0);
+            SDL_RenderPresent(REN);
+        }
+    }
+}
 
 void render_text(const char* message, int x, int y, SDL_Color color)
 {
