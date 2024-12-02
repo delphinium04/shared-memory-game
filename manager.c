@@ -152,7 +152,7 @@ void turn_end(int sig) {
 
 // SIGGAMEOVER Handler
 void game_end(int sig) {
-    set_game_running(dataptr, false);
+    dataptr->game_running = false;
     printf("게임 종료, [%d] 승리\n", dataptr->winner);
 }
 
