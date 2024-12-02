@@ -200,21 +200,6 @@ void client_game()
     }
 }
 
-// AI 사용, mutex와 cond에 대한 지식 필요
-void* wait_game_running(void* data)
-{
-    GameData* dataptr = (GameData*)data;
-    pthread_mutex_lock(&dataptr->lock);
-    while (!dataptr->game_running)
-    {
-        pthread_cond_wait(&dataptr->cond, &dataptr->lock);
-    }
-    printf("Game is now running!\n");
-    pthread_mutex_unlock(&dataptr->lock);
-    return NULL;
-}
-
-
 void run_client()
 {
     is_turn = false;
@@ -223,18 +208,6 @@ void run_client()
 
     printf("[Server:%d] 게임 준비 중\n", dataptr->server_pid);
 
-    // 추후 시간 있으면 밑에 while(usleep~ -> 쓰레드로 변경
-    // pthread_t wait_thread;
-    // int res = pthread_create(&wait_thread, NULL, wait_game_running, (void*)dataptr);
-    // if (res != 0) {
-    //     fprintf(stderr, "Error creating thread: %d\n", res);
-    //     return;
-    // }
-    // res = pthread_join(wait_thread, NULL);
-    // if (res != 0) {
-    //     fprintf(stderr, "Error joining thread: %d\n", res);
-    //     return;
-    // }
 
     if (dataptr->game_running == false) //?
     {
@@ -250,18 +223,7 @@ void run_client()
 
 void read_from_sdl(char* buffer)
 {
-    // MSG_SIZE로 읽기 전 (함수 호출 전에) 입력된 버퍼 비우고 싶은데 이건 작동 X
-    // printf("[Client] 버퍼 비우는 중:read_from_sdl()\n");
     int read_bytes = 1;
-    // while ((read_bytes = read(pipe_sdl_to_client[0], buffer, MSG_SIZE)) > 0);
-    //
-    // // Clear errors
-    // if (read_bytes == -1 && errno != EAGAIN && errno != EWOULDBLOCK) {
-    //     perror("파이프 읽기 오류");
-    //     close(pipe_client_to_sdl[1]);
-    //     close(pipe_sdl_to_client[0]);
-    //     exit(EXIT_FAILURE);
-    // }
 
     printf("[Client] 입력 대기 시작:read_from_sdl()\n");
     while (true)

@@ -2,7 +2,6 @@
 
 GameData *dataptr;
 char server_message[MSG_SIZE] = {'\0'};
-int fd1, fd2; // Manager -> Client pipe
 
 void run_manager();
 
@@ -45,9 +44,6 @@ void initialize_data(void) {
     dataptr->player_position[1] = 0;
     dataptr->winner = -1;
     dataptr->current_turn = -1;
-
-    pthread_mutex_init(&dataptr->lock, NULL);
-    pthread_cond_init(&dataptr->cond, NULL);
 }
 
 bool wait_players(int seconds) {
@@ -160,14 +156,6 @@ void game_end(int sig) {
     printf("게임 종료, [%d] 승리\n", dataptr->winner);
 }
 
-// AI 사용, mutex와 cond에 대한 지식 필요
-void set_game_running(GameData *dataptr, bool is_running) {
-    pthread_mutex_lock(&dataptr->lock);
-    dataptr->game_running = is_running;
-    pthread_cond_signal(&dataptr->cond);
-    pthread_mutex_unlock(&dataptr->lock);
-}
-
 void run_manager() {
     signal(SIGTURNEND, turn_end);
     signal(SIGGAMEOVER, game_end);
@@ -177,10 +165,7 @@ void run_manager() {
     set_mini_game_zone();
     sleep(2);
 
-    pthread_mutex_lock(&dataptr->lock);
     dataptr->game_running = true;
-    pthread_cond_broadcast(&dataptr->cond); // 모든 클라이언트를 깨웁니다.
-    pthread_mutex_unlock(&dataptr->lock);
 
     printf("Game started\n");
     sleep(1);

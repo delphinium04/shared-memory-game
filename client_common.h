@@ -44,9 +44,6 @@ typedef struct
     int player_position[2];
     int current_turn;
     int winner;
-
-    pthread_mutex_t lock; // 뮤텍스
-    pthread_cond_t cond; // 조건 변수
 } GameData;
 
 typedef struct
