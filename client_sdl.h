@@ -1,5 +1,4 @@
 //
-// Created by delp on 11/27/24.
 //
 
 #ifndef CLIENT_SDL_H
@@ -29,4 +28,4 @@ void render_mini_game();
 void macro_show_game(SDL_Texture* texture);
 void render_game_over();
 
-#endif //CLIENT_SDL_H
+#endif

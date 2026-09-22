@@ -1,6 +1,4 @@
 //
-// Created by delp on 11/27/24.
-// common things related to game
 //
 
 #ifndef CLIENT_COMMON_H
@@ -54,7 +52,7 @@ typedef struct
 
 extern int pipe_client_to_sdl[2];
 extern int pipe_sdl_to_client[2];
-extern int player_index; // 0 or 1
+extern int player_index;
 extern GameData *dataptr;
 
-#endif //CLIENT_COMMON_H
+#endif

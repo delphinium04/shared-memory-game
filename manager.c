@@ -78,6 +78,9 @@ int main(void) {
 
     initialize_data();
 
+    printf("Room ready: %d shmid=%d\n", room_number, shmid);
+    fflush(stdout);
+
     bool is_game_valid = wait_players(30);
     if (is_game_valid == false) {
         terminate(shmid, "No Player Connected");
@@ -144,13 +147,11 @@ void set_turn() {
     printf("kill SIGTURNSTART\n");
 }
 
-// SIGTURNEND Handler
 void turn_end(int sig) {
     printf("[%d] 턴 종료\n", dataptr->current_turn);
     set_turn();
 }
 
-// SIGGAMEOVER Handler
 void game_end(int sig) {
     dataptr->game_running = false;
     printf("게임 종료, [%d] 승리\n", dataptr->winner);

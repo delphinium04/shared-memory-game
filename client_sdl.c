@@ -1,6 +1,5 @@
 #include "client_sdl.h"
 
-// sudo apt-get install libsdl2-dev libsdl2-image-dev libsdl2-ttf-dev
 /*
  * client_common.h에 선언된 내용
  * extern int pipe_client_to_sdl[2];
@@ -89,7 +88,6 @@ bool init_sdl(const char *title) {
         return false;
     }
 
-    // src matching
     strcpy(client_msg, "DEBUG");
 
     FONT_DEFAULT = TTF_OpenFont("./src/Pretendard.ttf", 24);
@@ -175,7 +173,7 @@ bool init_sdl(const char *title) {
 void assign_stage_position() {
     const int start_y = 660;
     const int dy = 170;
-    bool is_reversed = false; // false: left -> right
+    bool is_reversed = false;
 
     for (int line = 0; line < 4; line++) {
         int start_x;
@@ -190,19 +188,15 @@ void assign_stage_position() {
             stage_position[line * 7 + column].y = start_y - line * dy;
         }
 
-        if (is_reversed)
-            stage_position[line * 7 - 1].x = 1060;
-        else
-            stage_position[line * 7 - 1].x = 205;
-        stage_position[line * 7 - 1].y = start_y - 85 - (line - 1) * dy;
+        if (line > 0) {
+            stage_position[line * 7 - 1].x = is_reversed ? 1060 : 205;
+            stage_position[line * 7 - 1].y = start_y - 85 - (line - 1) * dy;
+        }
         is_reversed = is_reversed ? false : true;
     }
 
-    for (int line = 0; line < 4; line++) {
-        for (int column = 0; column <= 6; column++) {
-            printf("[SDL] stage %d => %d, %d\n", line * 7 + column, stage_position[line * 7 + column].x,
-                   stage_position[line * 7 + column].y);
-        }
+    for (int i = 0; i < MAP_SIZE; i++) {
+        printf("[SDL] stage %d => %d, %d\n", i, stage_position[i].x, stage_position[i].y);
     }
 }
 
@@ -212,7 +206,7 @@ void run_sdl() {
     printf("[SDL] 프로세스 시작\n");
 
     if (init_sdl("Octopus Game") == false) {
-        perror("SDL 초기화 오류");
+        fprintf(stderr, "게임 화면 초기화 실패: 위 오류 메시지를 확인하세요.\n");
         exit(EXIT_FAILURE);
     }
 
@@ -233,13 +227,19 @@ void run_sdl() {
     while (!quit) {
         while (SDL_PollEvent(&e)) {
             if (e.type == SDL_QUIT)
+            {
                 quit = true;
+                break;
+            }
             if (e.type == SDL_MOUSEBUTTONDOWN) {
                 // 클릭 시 파이프 입력
                 printf("[SDL] Clicked\n");
                 write_to_client("[MOUSE]");
             }
         }
+
+        if (quit)
+            break;
 
         if (dataptr->minigame_time) {
             render_mini_game();
@@ -252,8 +252,10 @@ void run_sdl() {
         // 100ms 단위로 Update
         SDL_Delay(100);
     }
-    render_game_over(); // 3초간 승패 이미지 출력
-    SDL_Delay(3000);
+    if (!quit) {
+        render_game_over(); // 3초간 승패 이미지 출력
+        SDL_Delay(3000);
+    }
 
     cleanup();
 }
@@ -352,7 +354,7 @@ void update() {
         render_player(1);
     }
 
-    char *buffer;
+    char buffer[MSG_SIZE];
     // 두 글자 이하는 출력 무시
     if (read_from_client(buffer) > 0 && strlen(buffer) > 1)
         strcpy(client_msg, buffer);
@@ -361,9 +363,8 @@ void update() {
 }
 
 void render_mini_game() {
-    char *buffer;
+    char buffer[MSG_SIZE];
     if (read_from_client(buffer) > 0 && strlen(buffer) > 1) {
-        //quiz
         if (strcmp(buffer, "quiz1") == 0) {
             macro_show_game(Quiz_textures[0]);
             macro_show_game(Minigame_begin_texture);
@@ -388,7 +389,7 @@ void render_mini_game() {
             macro_show_game(Quiz_textures[6]);
         } else if (strcmp(buffer, "quiz_fail") == 0) {
             macro_show_game(Quiz_textures[7]);
-        } //typing
+        }
         else if (strcmp(buffer, "typing1") == 0) {
             macro_show_game(typing_textures[0]);
             macro_show_game(typing_textures[1]);
@@ -415,7 +416,7 @@ void render_mini_game() {
             macro_show_game(typing_textures[8]);
         } else if (strcmp(buffer, "octotyping_timeout") == 0) {
             macro_show_game(typing_textures[9]);
-        } //updown
+        }
         else if (strcmp(buffer, "octoupdown") == 0) {
             macro_show_game(updown_textures[0]);
             macro_show_game(updown_textures[1]);
@@ -474,7 +475,9 @@ void render_player(int idx) {
 }
 
 void write_to_client(char *message) {
-    if (write(pipe_sdl_to_client[1], message, MSG_SIZE) == -1) {
+    char buffer[MSG_SIZE] = {0};
+    snprintf(buffer, sizeof(buffer), "%s", message);
+    if (write(pipe_sdl_to_client[1], buffer, sizeof(buffer)) == -1) {
         perror("[SDL] pipe write failed");
         exit(EXIT_FAILURE);
     }
@@ -489,5 +492,8 @@ int read_from_client(char *buffer) {
         exit(EXIT_FAILURE);
     }
 
+    if (count > 0) {
+        buffer[count < MSG_SIZE ? count : MSG_SIZE - 1] = '\0';
+    }
     return count;
 }

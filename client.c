@@ -13,7 +13,18 @@ int quiz_count;
 int fd;
 bool is_turn;
 
-// Exit game after shmat succeed (Not declared in header)
+static void sdl_child_exited(int sig)
+{
+    (void)sig;
+    int saved_errno = errno;
+    int status;
+    if (waitpid(-1, &status, WNOHANG) > 0)
+    {
+        _exit(WIFEXITED(status) ? WEXITSTATUS(status) : EXIT_FAILURE);
+    }
+    errno = saved_errno;
+}
+
 void terminate(char* message)
 {
     printf("terminate: %s\n", message);
@@ -56,6 +67,20 @@ bool wait_another_player(int seconds)
 
 int main(void)
 {
+    char *base_path = SDL_GetBasePath();
+    if (base_path == NULL)
+    {
+        fprintf(stderr, "실행 파일 경로 확인 실패: %s\n", SDL_GetError());
+        return EXIT_FAILURE;
+    }
+    if (chdir(base_path) == -1)
+    {
+        perror("리소스 기준 경로 변경 실패");
+        SDL_free(base_path);
+        return EXIT_FAILURE;
+    }
+    SDL_free(base_path);
+
     // 메모리 초기 세팅
     int room_number;
     printf("%d -> room ID: ", getpid());
@@ -96,7 +121,6 @@ int main(void)
         exit(0);
     }
 
-    // Set SDL
     if (pipe(pipe_client_to_sdl) == -1 || pipe(pipe_sdl_to_client) == -1)
     {
         perror("pipe");
@@ -108,6 +132,16 @@ int main(void)
     fcntl(pipe_client_to_sdl[1], F_SETFL, O_NONBLOCK);
     fcntl(pipe_client_to_sdl[0], F_SETFL, O_NONBLOCK);
     fcntl(pipe_sdl_to_client[1], F_SETFL, O_NONBLOCK);
+
+    struct sigaction child_action = {0};
+    child_action.sa_handler = sdl_child_exited;
+    child_action.sa_flags = SA_NOCLDSTOP | SA_RESTART;
+    sigemptyset(&child_action.sa_mask);
+    if (sigaction(SIGCHLD, &child_action, NULL) == -1)
+    {
+        perror("sigaction SIGCHLD");
+        exit(EXIT_FAILURE);
+    }
 
     pid_t sdl_pid = fork();
     if (sdl_pid == -1)
@@ -214,7 +248,7 @@ void run_client()
         while (dataptr->game_running == false)
         {
             printf("waiting...\n");
-            usleep(1000 * 100); // 100ms
+            usleep(1000 * 100);
         }
     }
 
@@ -231,7 +265,7 @@ void read_from_sdl(char* buffer)
         read_bytes = read(pipe_sdl_to_client[0], buffer, MSG_SIZE);
         if (read_bytes > 0)
         {
-            buffer[read_bytes] = '\0';
+            buffer[read_bytes < MSG_SIZE ? read_bytes : MSG_SIZE - 1] = '\0';
             break;
         }
         if (read_bytes == -1 && errno != EAGAIN && errno != EWOULDBLOCK)
@@ -241,15 +275,15 @@ void read_from_sdl(char* buffer)
             close(pipe_sdl_to_client[0]);
             exit(EXIT_FAILURE);
         }
-        usleep(1000 * 100); // 100ms sleep
+        usleep(1000 * 100);
     }
     printf("[SDL->Client] %s\n", buffer);
 }
 
 void write_to_sdl(char* message)
 {
-    char buffer[MSG_SIZE];
-    strcpy(buffer, message);
+    char buffer[MSG_SIZE] = {0};
+    snprintf(buffer, sizeof(buffer), "%s", message);
     printf("[Client->SDL] %s\n", message);
 
     if (write(pipe_client_to_sdl[1], buffer, MSG_SIZE) == -1)
@@ -259,19 +293,16 @@ void write_to_sdl(char* message)
     };
 }
 
-// return 1~max(inclusive)
 int get_random_int(int max)
 {
     srand(getpid() + time(NULL));
     return rand() % max + 1;
 }
 
-// SIGTURNSTART Handler
 void turn_start(int sig)
 {
     is_turn = true; // 현재 턴 플래그 설정
 }
-// SIGGAMEEND Handler
 void game_end(int sig) {}
 
 _Bool start_mini_game() {
@@ -366,11 +397,11 @@ _Bool typing(){
     int qnum; // 문제 결정 변수
     char ans[100]; // 문제 답변 및 정답 여부 확인용 배열
     const char* questions[5] = {
-        "공부를 플레이하는 게임전공", //octotype_1
-        "폭력은 협상과 꾀를 대체할 수 없다",//octotype_2
-        "영부터 시작하는 정수 자료형", //octotype_3
-        "문어 제 다리 뜯어먹는 격", //octotype_4
-        "대답은 짧아야 덜 성가신 법이다" //octotype_5
+        "공부를 플레이하는 게임전공",
+        "폭력은 협상과 꾀를 대체할 수 없다",
+        "영부터 시작하는 정수 자료형",
+        "문어 제 다리 뜯어먹는 격",
+        "대답은 짧아야 덜 성가신 법이다"
     };
     
     srand(time(0));
